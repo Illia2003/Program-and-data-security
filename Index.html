@@ -26,6 +26,8 @@
             <button onclick="addUser()">Додати користувача</button>
             <button onclick="lockUser()">Блокувати користувача</button>
             <button onclick="toggleRestrictions()">Змінити обмеження</button>
+            <button onclick="viewLogs()">Переглянути реєстраційни журнал</button>
+            <button onclick="viewActionLogs()">Переглянути операційний журнал</button>
             <button onclick="logout()">Вийти</button>
         </div>
         <div id="user-panel" style="display: none;">
@@ -54,6 +56,13 @@
             <button onclick="closeAbout()">Закрити</button>
         </div>
     </div>
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closeUserModal()">&times;</span>
+          <h2>Список користувачів</h2>
+          <table id="userList"></table>
+        </div>
+      </div>
     <script src="app.js"></script>
 </body>
 </html>

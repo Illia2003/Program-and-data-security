@@ -2,6 +2,8 @@ let users = {};
 const USERS_FILE_NAME = 'users.json';
 let attempts = 0; 
 let currentUser = ''; 
+let registrationLogs = [];
+let actionLogs = [];
 async function init() {
     try {
         const response = await fetch(USERS_FILE_NAME);
@@ -18,6 +20,20 @@ async function init() {
         await saveUsers();
     }
 }
+function logEvent(event) {
+    const timestamp = new Date().toISOString();
+    actionLogs.push(`[${timestamp}] ${event}`);
+    saveLogs();
+}
+async function saveLogs() {
+    const blob = new Blob([JSON.stringify(actionLogs, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'actionLogs.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
 function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
@@ -27,14 +43,16 @@ function login() {
         if (user && !user.locked) {
            if (user.password === password) {
                 document.getElementById('message').textContent = '';
+                logEvent(`${username} увійшов до системи`); 
+                registrationLogs.push(`${username} увійшов`);
                 if (username === 'ADMIN') {
                     document.getElementById('admin-panel').style.display = 'block';
                     document.getElementById('login').style.display = 'none';
-                    currentUser = username; // Ініціалізація змінної currentUser
+                    currentUser = username; 
                 } else {
                     document.getElementById('user-panel').style.display = 'block';
                     document.getElementById('login').style.display = 'none';
-                    currentUser = username; // Ініціалізація змінної currentUser
+                    currentUser = username; 
                 }
             } else {
                 attempts++;
@@ -63,8 +81,26 @@ function logout() {
     document.getElementById('admin-panel').style.display = 'none';
     document.getElementById('user-panel').style.display = 'none';
     document.getElementById('login').style.display = 'block';
+    logEvent(`${currentUser} вийшов з системи`); 
+    registrationLogs.push(`${currentUser} вийшов`); 
+}
+function viewLogs() {
+    const registrationLogsDisplay = registrationLogs.join('\n');
+    alert(`Реєстраційний журнал:\n${registrationLogsDisplay}`);
 }
 
+function closeLogsModal() {
+    document.getElementById('logsModal').style.display = 'none';
+}
+
+function viewActionLogs() {
+    const actionLogsDisplay = actionLogs.join('\n');
+    alert(`Операційний журнал:\n${actionLogsDisplay}`);
+}
+
+function closeActionLogsModal() {
+    document.getElementById('actionLogsModal').style.display = 'none';
+}
 function openChangePasswordModal() {
     document.getElementById('myModal').style.display = "block";
 }
@@ -102,6 +138,7 @@ async function confirmChangePassword() {
         users[currentUser].password = newPassword; 
         await saveUsers();
         alert('Пароль успішно змінено.');
+        logEvent(`Користувач ${currentUser} змінив пароль`);
         closeModal(); 
         clearModalFields(); 
     }
@@ -123,16 +160,40 @@ async function saveUsers() {
     URL.revokeObjectURL(url);
 }
 
+function closeUserModal() {
+    document.getElementById('userModal').style.display = 'none'; 
+}
 function viewUsers() {
-    alert(JSON.stringify(users, null, 2));
+    const userListElement = document.getElementById('userList');
+    userListElement.innerHTML = '';
+    const tableHeader = `
+        <tr>
+            <th>Ім'я користувача</th>
+            <th>Пароль</th>
+            <th>Заблокований</th>
+            <th>Обмеження</th>
+        </tr>`;
+    userListElement.innerHTML = tableHeader;
+    for (const [username, userData] of Object.entries(users)) {
+        const row = `
+            <tr>
+                <td>${username}</td>
+                <td>${userData.password ? '********' : '(Не встановлений)'}</td>
+                <td>${userData.locked ? 'Так' : 'Ні'}</td>
+                <td>${userData.restrictions ? 'Так' : 'Ні'}</td>
+            </tr>`;
+        userListElement.innerHTML += row;
+    }
+    document.getElementById('userModal').style.display = 'block';
 }
 
 function addUser() {
     const newUsername = prompt('Введіть ім\'я нового користувача:');
     if (newUsername && !users[newUsername]) {
         users[newUsername] = { password: '', locked: false, restrictions: false };
-        saveUsers(); // Перезаписуємо файл
+        saveUsers(); 
         alert('Користувача успішно додано.');
+        logEvent(`Адміністратор додав користувача ${newUsername}.`);
     } else {
         alert('Користувач з таким ім\'ям вже існує або ім\'я не введено.');
     }
@@ -144,6 +205,7 @@ function lockUser() {
         users[username].locked = true;
         saveUsers(); // Перезаписуємо файл
         alert(`Користувача ${username} успішно заблоковано.`);
+        logEvent(`Адміністратор заблокував користувача ${username}.`);
     } else {
         alert('Користувача не знайдено.');
     }
@@ -156,6 +218,7 @@ function toggleRestrictions() {
         saveUsers(); // Перезаписуємо файл
         const status = users[username].restrictions ? 'включено' : 'вимкнено';
         alert(`Обмеження для користувача ${username} ${status}.`);
+        logEvent(`Адміністратор встановив обмеження для користувача ${username}.`);
     } else {
         alert('Користувача не знайдено.');
     }
