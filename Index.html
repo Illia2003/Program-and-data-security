@@ -12,6 +12,8 @@
         <div id="login">
             <input type="text" id="username" placeholder="Ім'я користувача">
             <input type="password" id="password" placeholder="Пароль">
+            <div id="captcha-container" style="position: relative; width: 100%; height: 300px;margin-bottom: 10px;"></div>            
+            <input type="text" id="captchaAnswer" placeholder="Введіть відповідь" required >
             <button onclick="login()">Увійти</button>
             <button onclick="showHelp()">Довідка</button>
         <div id="helpMenu" style="display: none;">
